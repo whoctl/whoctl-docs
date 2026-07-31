@@ -67,6 +67,16 @@ and whoctl with a key against an unsigned index is refused too. Generate the key
 once, keep the private half in this repository's secrets and nowhere else, and
 put the public half in whoctl in the same change.
 
+**The mark is `web/assets/logo.svg`, and everything else is an export of it.**
+The PNGs and the .ico are committed rather than built, because rasterizing needs
+librsvg and ImageMagick and CI has no business depending on either for a file
+that changes once. `make logo` re-exports them; editing the SVG without running
+it leaves the two disagreeing, and nothing will tell you.
+
+It carries its own six colours instead of `currentColor`, so it does not follow
+the page theme — a brand mark that changes colour with the reader's settings is
+not a brand mark. That is why it is an `<img>` and not inlined.
+
 **No external assets.** One stylesheet, no fonts, no scripts, so a page works
 from a `file://` path and from a web server alike. That is why syntax
 highlighting is a tokenizer rather than a JavaScript library: it covers the

@@ -1,0 +1,21 @@
+{{define "home.html" -}}
+<section class="hero home-hero">
+  <img class="logo" src="{{.Root}}assets/logo.svg" alt="" width="84" height="84">
+  <h1>One CLI, many providers</h1>
+  <p class="lede">Manage a machine the way <code>kubectl</code> manages a cluster:
+  <code>get</code>, <code>apply</code>, <code>delete</code>, over manifests.
+  Behind the verbs is a <strong>provider</strong>, and whoctl ships with none —
+  naming one is what installs it.</p>
+  <div class="hero-actions">
+    <a class="button" href="#install">Install</a>
+    <a class="button ghost" href="{{.Root}}providers/index.html">Browse providers</a>
+    <a class="button ghost" href="https://github.com/whoctl/whoctl">Source</a>
+  </div>
+</section>
+
+<div class="wrap">
+  <article class="prose home-prose">
+    {{.Content}}
+  </article>
+</div>
+{{- end}}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/whoctl/whoctl-sdk-go/docs"
 	"html/template"
+	"io/fs"
 	"path"
 	"sort"
 	"strings"
@@ -13,11 +14,40 @@ import (
 	"github.com/whoctl/whoctl-sdk-go/schema"
 )
 
-// The two helpers the templates need. They are functions because their
-// receivers now live in the SDK — see Groupings.
+// The helpers the templates need. They are functions because their receivers
+// live in the SDK — see Groupings.
 var siteFuncs = template.FuncMap{
 	"groupings": Groupings,
 	"names":     Names,
+	"icon":      IconOf,
+}
+
+// providerIcons is what web/assets/providers holds, read once.
+var providerIcons = func() map[string]bool {
+	out := map[string]bool{}
+	entries, err := fs.ReadDir(web.FS, "assets/providers")
+	if err != nil {
+		return out
+	}
+	for _, e := range entries {
+		out[strings.TrimSuffix(e.Name(), ".svg")] = true
+	}
+	return out
+}()
+
+// IconOf is the path of a provider's icon, relative to the site root.
+//
+// The icons are drawn here rather than shipped by a provider, for the same
+// reason its pages are markdown and not markup: an SVG from a repository we do
+// not control can carry script. They are also deliberately not the projects'
+// own logos — Valve's and the Linux Foundation's marks are theirs, with terms
+// of their own — but glyphs for what the provider manages. A provider with no
+// icon gets the generic one rather than a hole in the layout.
+func IconOf(name string) string {
+	if providerIcons[name] {
+		return "assets/providers/" + name + ".svg"
+	}
+	return "assets/providers/default.svg"
 }
 
 var siteTemplates = template.Must(
@@ -27,32 +57,62 @@ var siteTemplates = template.Must(
 // their path relative to the output directory. Returning files rather than
 // writing them keeps the renderer testable and leaves the decision of where
 // they land to the caller.
-func Render(site *docs.Site) (map[string][]byte, error) {
+func Render(site *docs.Site, repos map[string]string) (map[string][]byte, error) {
 	out := map[string][]byte{}
 
-	css, err := web.FS.ReadFile("assets/whoctl.css")
+	// Everything in web/assets is published as it is: the stylesheet, and the
+	// brand files. Copying the directory rather than naming each file means
+	// adding a logo size is adding a file.
+	err := fs.WalkDir(web.FS, "assets", func(name string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		blob, readErr := web.FS.ReadFile(name)
+		if readErr != nil {
+			return readErr
+		}
+		out[name] = blob
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	out["assets/whoctl.css"] = css
 
-	if err := renderPage(out, "index.html", "browse.html", pageData{
+	// The home page is prose this repository writes — what the tool is, how to
+	// install it, what a command looks like. It goes through the same markdown
+	// pipeline as a provider's pages so its examples are highlighted by the
+	// same tokenizer, and it is a file rather than markup in a template so
+	// editing it does not mean editing HTML.
+	home, err := web.FS.ReadFile("home.md")
+	if err != nil {
+		return nil, err
+	}
+	content, _ := renderPageBody(string(home))
+	if err := renderPage(out, "index.html", "home.html", pageData{
+		Site:    site,
+		Title:   site.Title,
+		Content: content,
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := renderPage(out, path.Join("providers", "index.html"), "browse.html", pageData{
 		Site:  site,
-		Title: site.Title,
+		Title: "Providers — " + site.Title,
 	}); err != nil {
 		return nil, err
 	}
 
 	for i := range site.Providers {
 		p := &site.Providers[i]
-		if err := renderProvider(out, site, p); err != nil {
+		if err := renderProvider(out, site, p, repos[p.Name]); err != nil {
 			return nil, fmt.Errorf("provider %s: %w", p.Name, err)
 		}
 	}
 	return out, nil
 }
 
-func renderProvider(out map[string][]byte, site *docs.Site, p *docs.Provider) error {
+func renderProvider(out map[string][]byte, site *docs.Site, p *docs.Provider, repo string) error {
 	base := path.Join("providers", p.Name)
 
 	overview, headings := renderPageBody(p.Overview.Body)
@@ -60,6 +120,7 @@ func renderProvider(out map[string][]byte, site *docs.Site, p *docs.Provider) er
 		Site:     site,
 		Title:    p.DisplayName + " provider — " + site.Title,
 		Provider: p,
+		Repo:     repo,
 		Tab:      "overview",
 		Content:  overview,
 		Headings: headings,
@@ -72,6 +133,7 @@ func renderProvider(out map[string][]byte, site *docs.Site, p *docs.Provider) er
 		Site:     site,
 		Title:    "Documentation — " + p.DisplayName,
 		Provider: p,
+		Repo:     repo,
 		Tab:      "docs",
 	})
 	if err != nil {
@@ -85,6 +147,7 @@ func renderProvider(out map[string][]byte, site *docs.Site, p *docs.Provider) er
 			Site:     site,
 			Title:    r.Kind + " — " + p.DisplayName + " provider",
 			Provider: p,
+			Repo:     repo,
 			Resource: r,
 			Tab:      "docs",
 			Content:  content,
@@ -102,6 +165,7 @@ func renderProvider(out map[string][]byte, site *docs.Site, p *docs.Provider) er
 			Site:     site,
 			Title:    g.Title + " — " + p.DisplayName + " provider",
 			Provider: p,
+			Repo:     repo,
 			Guide:    g,
 			Tab:      "guides",
 			Content:  content,
@@ -121,6 +185,11 @@ type pageData struct {
 	Provider *docs.Provider
 	Resource *docs.Resource
 	Guide    *docs.Page
+	// Repo is "owner/repo" on GitHub for the provider this page belongs to,
+	// which comes from the catalogue and not from the bundle: what a provider
+	// says about itself is prose and a schema, and where it is published is
+	// this repository's record.
+	Repo     string
 	Tab      string
 	Content  template.HTML
 	Headings []Heading

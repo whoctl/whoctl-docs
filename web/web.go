@@ -15,5 +15,5 @@ import "embed"
 // **No external assets.** One stylesheet, no fonts, no scripts, so a page works
 // from a file:// path and from a web server alike.
 //
-//go:embed templates/*.html assets/*
+//go:embed templates/*.html assets/* home.md
 var FS embed.FS

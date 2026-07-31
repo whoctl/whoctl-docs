@@ -410,7 +410,7 @@ func inlineHTML(s string) string {
 	for i := 0; i < len(s); {
 		switch c := s[i]; {
 		case c == '\\' && i+1 < len(s):
-			b.WriteString(escapeHTML(string(s[i+1])))
+			writeEscapedByte(&b, s[i+1])
 			i += 2
 
 		case c == '`':
@@ -426,7 +426,7 @@ func inlineHTML(s string) string {
 
 		case c == '[':
 			if text, url, size, ok := link(s, i); ok {
-				fmt.Fprintf(&b, "<a href=%q>%s</a>", escapeHTML(url), inlineHTML(text))
+				fmt.Fprintf(&b, "<a href=%q>%s</a>", escapeHTML(pageURL(url)), inlineHTML(text))
 				i += size
 				continue
 			}
@@ -452,11 +452,35 @@ func inlineHTML(s string) string {
 			i++
 
 		default:
-			b.WriteString(escapeHTML(string(c)))
+			writeEscapedByte(&b, c)
 			i++
 		}
 	}
 	return b.String()
+}
+
+// writeEscapedByte copies one byte through, escaping it if HTML needs it.
+//
+// The obvious spelling — escapeHTML(string(c)) — is wrong on any character
+// outside ASCII: c is a byte, and string(byte) widens it to a rune, so each
+// continuation byte of a multi-byte character is re-encoded on its own. An em
+// dash came out as "â€"", and so did every accented letter and curly quote in
+// every page on the site. The four characters HTML escapes are all ASCII, so a
+// byte that is none of them is copied untouched and multi-byte sequences
+// survive whole.
+func writeEscapedByte(b *strings.Builder, c byte) {
+	switch c {
+	case '&':
+		b.WriteString("&amp;")
+	case '<':
+		b.WriteString("&lt;")
+	case '>':
+		b.WriteString("&gt;")
+	case '"':
+		b.WriteString("&quot;")
+	default:
+		b.WriteByte(c)
+	}
 }
 
 func runLength(s string, i int, c byte) int {
@@ -465,6 +489,31 @@ func runLength(s string, i int, c byte) int {
 		n++
 	}
 	return n
+}
+
+// pageURL rewrites a link to a sibling page.
+//
+// A provider's prose is read in two places: on the site, and on GitHub, where
+// the .md files sit next to each other. It is written for the second — that is
+// where the author is looking — so a cross-reference is "[apk](apkpackage.md)",
+// and publishing that verbatim gives the site a link to a file it does not
+// serve. The page is rendered to .html, so the link is too.
+//
+// Only a relative link is touched: an absolute URL is somebody else's site, and
+// a fragment is this page.
+func pageURL(url string) string {
+	if strings.Contains(url, "://") || strings.HasPrefix(url, "#") || strings.HasPrefix(url, "/") {
+		return url
+	}
+	path, fragment, hasFragment := strings.Cut(url, "#")
+	if !strings.HasSuffix(path, ".md") {
+		return url
+	}
+	path = strings.TrimSuffix(path, ".md") + ".html"
+	if hasFragment {
+		return path + "#" + fragment
+	}
+	return path
 }
 
 // link parses [text](url) starting at i, allowing balanced brackets in the

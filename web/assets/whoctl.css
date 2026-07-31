@@ -1,4 +1,4 @@
-/* whoctl registry — one stylesheet, no external assets, so the built site
+/* whoctl docs — one stylesheet, no external assets, so the built site
    works from a file:// path as well as from a web server. */
 
 :root {
@@ -75,7 +75,7 @@ a:hover { text-decoration: underline; }
   background: var(--bg-soft);
 }
 
-.brand { display: flex; align-items: baseline; gap: 8px; color: var(--text); }
+.brand { display: inline-flex; align-items: center; gap: 9px; color: var(--text); }
 .brand:hover { text-decoration: none; }
 .mark { font-weight: 700; font-size: 17px; letter-spacing: -0.02em; }
 .brand-sub { color: var(--muted); font-size: 14px; }
@@ -104,6 +104,68 @@ a:hover { text-decoration: underline; }
 .hero h1 { margin: 0 0 10px; font-size: 32px; letter-spacing: -0.02em; }
 
 .lede { color: var(--muted); margin: 0 auto; max-width: 62ch; }
+.lede + .lede { margin-top: 12px; }
+
+/* The home page leads with what the tool is, so its hero carries more prose
+   than a listing's and needs the room. */
+.home-hero { padding: 64px 24px 40px; }
+.home-hero h1 { font-size: 40px; }
+
+/* The mark is one drawing at two sizes: a badge above the home page's title,
+   and a glyph beside the wordmark everywhere else. */
+.logo { width: 26px; height: 26px; flex: none; }
+
+/* A provider's glyph: on its card, and beside its name on its own page. */
+.pico { width: 34px; height: 34px; flex: none; border-radius: 8px; }
+.pico.big { width: 56px; height: 56px; border-radius: 12px; }
+.identity-row { display: flex; align-items: center; gap: 16px; text-align: left; }
+.identity-row h1 { margin: 0 0 4px; }
+.identity-row .lede { margin: 0; max-width: 62ch; }
+.badge.repo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.home-hero > .logo { width: 84px; height: 84px; margin: 0 auto 22px; display: block; }
+
+.hero-actions {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button:hover { filter: brightness(1.08); }
+
+.button.ghost {
+  background: var(--bg);
+  color: var(--accent);
+}
+
+/* The home page is one column of prose: no sidebar to sit beside, so it is
+   centred like an article rather than filling the page. */
+.home-prose {
+  max-width: 76ch;
+  margin: 0 auto;
+  padding: 40px 0 64px;
+}
+
+.home-prose h2 {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.home-prose h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 
 .filter {
   margin-top: 24px;
@@ -134,7 +196,7 @@ a:hover { text-decoration: underline; }
 }
 .card:hover { border-color: var(--accent); text-decoration: none; }
 
-.card-head { display: flex; align-items: center; gap: 10px; }
+.card-head { display: flex; align-items: center; gap: 11px; }
 .card-head h2 { margin: 0; font-size: 18px; }
 .card-summary { color: var(--muted); margin: 8px 0 14px; font-size: 14px; }
 .card-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }

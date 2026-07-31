@@ -87,3 +87,52 @@ func TestSplitRowHandlesEscapedPipes(t *testing.T) {
 		t.Errorf("splitRow = %q", cells)
 	}
 }
+
+// A provider's prose is read on the site and on GitHub, and it is written for
+// GitHub — a cross-reference between two kinds is "[apk](apkpackage.md)".
+// Publishing that verbatim gave the site eleven links to files it does not
+// serve, and nothing but a link checker would have noticed.
+func TestSiblingPagesAreLinkedAsRendered(t *testing.T) {
+	cases := map[string]string{
+		"[a](apkpackage.md)":                `href="apkpackage.html"`,
+		"[a](apkpackage.md#spec)":           `href="apkpackage.html#spec"`,
+		"[a](../guides/first.md)":           `href="../guides/first.html"`,
+		"[a](https://example.invalid/x.md)": `href="https://example.invalid/x.md"`,
+		"[a](#spec)":                        `href="#spec"`,
+		"[a](user.html)":                    `href="user.html"`,
+	}
+	for in, want := range cases {
+		if got := inlineHTML(in); !strings.Contains(got, want) {
+			t.Errorf("%s rendered as %s, want %s", in, got, want)
+		}
+	}
+}
+
+// Every em dash, curly quote and accented letter on the site came out as
+// mojibake because the inline renderer widened a byte to a rune: string(byte)
+// re-encodes each continuation byte on its own. Nothing in the suite looked at
+// a character outside ASCII, so it rendered wrong for as long as it existed.
+func TestNonASCIISurvivesRendering(t *testing.T) {
+	for _, s := range []string{
+		"one — two",
+		"“quoted”",
+		"café, naïve, Ærø",
+		"日本語",
+		"**bold — dashed**",
+		"`code — in ticks`",
+		"[text — dashed](a.md)",
+	} {
+		got := inlineHTML(s)
+		for _, r := range []rune(s) {
+			if r > 127 && !strings.ContainsRune(got, r) {
+				t.Errorf("inlineHTML(%q) = %q, lost %q", s, got, string(r))
+				break
+			}
+		}
+	}
+
+	// The four it does escape are still escaped, and still only those.
+	if got := inlineHTML(`a & b < c > d "e"`); got != `a &amp; b &lt; c &gt; d &quot;e&quot;` {
+		t.Errorf("escaping changed: %s", got)
+	}
+}
