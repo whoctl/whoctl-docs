@@ -1,3 +1,7 @@
-site/
-bundles/
-providers.local.yaml
+# Anchored, all of them. An unanchored "site/" also matches internal/site/,
+# which is how this repository was published once without the package that
+# renders it: git said nothing, and the missing directory only showed up as a
+# build failure in CI.
+/site/
+/bundles/
+/providers.local.yaml
