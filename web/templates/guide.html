@@ -1,0 +1,14 @@
+{{define "guide.html" -}}
+<div class="wrap layout with-head">
+  {{template "sidebar" .}}
+  <article class="prose">
+    <p class="crumbs">
+      <a href="{{.Root}}index.html">Providers</a> <span>/</span>
+      <a href="{{.Root}}providers/{{.Provider.Name}}/index.html">{{.Provider.DisplayName}}</a> <span>/</span>
+      Guides
+    </p>
+    {{.Content}}
+  </article>
+  {{if .Headings}}{{template "toc" .}}{{end}}
+</div>
+{{- end}}

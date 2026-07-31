@@ -1,0 +1,52 @@
+name: pages
+
+on:
+  # A change to the templates, the styles or the catalogue.
+  push:
+    branches: [main]
+  # A provider published a release. Its workflow sends this; see the note in
+  # the README about the token that needs.
+  repository_dispatch:
+    types: [provider-released]
+  # A safety net: a dispatch that never arrives — a revoked token, a workflow
+  # that failed after publishing — would otherwise leave the site behind
+  # forever, and nobody would notice until they looked.
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+# Pages deploys from an artifact, and two runs writing at once would race.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: build the site
+        # One unreadable bundle fails this on purpose: a site quietly missing a
+        # provider is much harder to notice than a build that stopped.
+        run: make build OUTPUT=site VERSION=${{ github.sha }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

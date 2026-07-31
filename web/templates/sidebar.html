@@ -1,0 +1,47 @@
+{{define "sidebar" -}}
+<aside class="sidebar">
+  <p class="side-title">{{.Provider.DisplayName}}</p>
+  <ul class="side-list">
+    <li><a href="{{.Root}}providers/{{.Provider.Name}}/index.html"{{if eq .Tab "overview"}} class="current"{{end}}>Overview</a></li>
+  </ul>
+  {{range groupings .Provider}}
+  <p class="side-title">{{.Name}}</p>
+  <ul class="side-list">
+    {{range .Resources}}
+    <li><a href="{{$.Root}}providers/{{$.Provider.Name}}/docs/{{.Slug}}.html"{{if and $.Resource (eq $.Resource.Kind .Kind)}} class="current"{{end}}>{{.Kind}}</a></li>
+    {{end}}
+  </ul>
+  {{end}}
+  {{if .Provider.Guides}}
+  <p class="side-title">Guides</p>
+  <ul class="side-list">
+    {{range .Provider.Guides}}
+    <li><a href="{{$.Root}}providers/{{$.Provider.Name}}/guides/{{.Slug}}.html"{{if and $.Guide (eq $.Guide.Slug .Slug)}} class="current"{{end}}>{{.Title}}</a></li>
+    {{end}}
+  </ul>
+  {{end}}
+</aside>
+{{- end}}
+
+{{define "tabs" -}}
+<nav class="tabs">
+  <a href="{{.Root}}providers/{{.Provider.Name}}/index.html"{{if eq .Tab "overview"}} class="current"{{end}}>Overview</a>
+  <a href="{{.Root}}providers/{{.Provider.Name}}/docs/index.html"{{if eq .Tab "docs"}} class="current"{{end}}>Documentation</a>
+</nav>
+{{- end}}
+
+{{define "provider-head" -}}
+<section class="provider-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="{{.Root}}index.html">Providers</a> <span>/</span> {{.Provider.DisplayName}}</p>
+    <h1>{{.Provider.DisplayName}}</h1>
+    <p class="lede">{{.Provider.Summary}}</p>
+    <div class="card-meta">
+      {{range .Provider.Groups}}<code class="group">{{.}}</code>{{end}}
+      {{if .Provider.Maturity}}<span class="badge maturity">{{.Provider.Maturity}}</span>{{end}}
+      {{range .Provider.Categories}}<span class="badge">{{.}}</span>{{end}}
+    </div>
+    {{template "tabs" .}}
+  </div>
+</section>
+{{- end}}

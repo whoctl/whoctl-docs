@@ -1,0 +1,29 @@
+{{define "resource.html" -}}
+<div class="wrap layout with-head">
+  {{template "sidebar" .}}
+  <article class="prose">
+    <p class="crumbs">
+      <a href="{{.Root}}index.html">Providers</a> <span>/</span>
+      <a href="{{.Root}}providers/{{.Provider.Name}}/index.html">{{.Provider.DisplayName}}</a> <span>/</span>
+      {{.Resource.Kind}}
+    </p>
+    <h1>{{.Resource.Kind}}</h1>
+    {{if .Resource.Description}}<p class="lede">{{.Resource.Description}}</p>{{end}}
+
+    <dl class="identity">
+      <div><dt>apiVersion</dt><dd><code>{{.Resource.APIVersion}}</code></dd></div>
+      <div><dt>kind</dt><dd><code>{{.Resource.Kind}}</code></dd></div>
+      <div><dt>Names</dt><dd>{{range names .Resource}}<code>{{.}}</code>{{end}}</dd></div>
+      <div><dt>Verbs</dt><dd>{{range .Resource.Verbs}}<code>{{.}}</code>{{end}}</dd></div>
+    </dl>
+
+    {{if not .Resource.Exists}}
+    <p class="warn">This resource has no page yet. What follows comes from the code alone —
+    add <code>{{.Provider.SourceDir}}/resources/{{.Resource.Slug}}.md</code> to describe it.</p>
+    {{end}}
+
+    {{.Content}}
+  </article>
+  {{if .Headings}}{{template "toc" .}}{{end}}
+</div>
+{{- end}}

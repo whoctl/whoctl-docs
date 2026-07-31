@@ -1,0 +1,22 @@
+{{define "doclist.html" -}}
+{{template "provider-head" .}}
+<div class="wrap layout">
+  {{template "sidebar" .}}
+  <article class="prose">
+    <h1>Documentation</h1>
+    <p>Every kind the {{.Provider.DisplayName}} provider serves. Each page carries the
+    manifest fields, what <code>whoctl get</code> prints, and how the resource behaves.</p>
+    {{range groupings .Provider}}
+    <h2 id="{{.Slug}}">{{.Name}}</h2>
+    <div class="res-grid">
+      {{range .Resources}}
+      <a class="res" href="{{$.Root}}providers/{{$.Provider.Name}}/docs/{{.Slug}}.html">
+        <code>{{.Kind}}</code>
+        <span>{{.Description}}</span>
+      </a>
+      {{end}}
+    </div>
+    {{end}}
+  </article>
+</div>
+{{- end}}

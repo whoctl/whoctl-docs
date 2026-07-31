@@ -1,0 +1,29 @@
+{{define "provider.html" -}}
+{{template "provider-head" .}}
+<div class="wrap layout">
+  {{template "sidebar" .}}
+  <article class="prose">
+    {{if .Content}}{{.Content}}{{else}}<p class="empty">This provider ships no overview page.</p>{{end}}
+
+    <h2 id="resources">Resources</h2>
+    <div class="res-grid">
+    {{range .Provider.Resources}}
+      <a class="res" href="{{$.Root}}providers/{{$.Provider.Name}}/docs/{{.Slug}}.html">
+        <code>{{.Kind}}</code>
+        <span>{{.Description}}</span>
+      </a>
+    {{end}}
+    </div>
+  </article>
+  {{if .Headings}}{{template "toc" .}}{{end}}
+</div>
+{{- end}}
+
+{{define "toc" -}}
+<nav class="toc">
+  <p class="side-title">On this page</p>
+  <ul>
+    {{range .Headings}}{{if and (ge .Level 2) (le .Level 3)}}<li class="lvl{{.Level}}"><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}{{end}}
+  </ul>
+</nav>
+{{- end}}
