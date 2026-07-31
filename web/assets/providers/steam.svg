@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="steam">
+  <title>steam</title>
+  <rect x="14" y="58" width="172" height="96" rx="46" fill="#4d43cf"/>
+  <path d="M52 88 h18 v16 h16 v18 h-16 v16 h-18 v-16 h-16 v-18 h16 Z" fill="#c9c2fb"/>
+  <circle cx="134" cy="94" r="13" fill="#c9c2fb"/>
+  <circle cx="156" cy="122" r="13" fill="#8b83e3"/>
+</svg>

@@ -43,6 +43,19 @@ local:
 keygen:
 	@go run ./cmd/keygen
 
+## logo: re-export the brand PNGs from web/assets/logo.svg
+#
+# By hand, not in the build and not in CI: it needs librsvg and ImageMagick,
+# and the mark changes about once. The SVG is the source; everything else here
+# is an export of it, so run this after editing it or the two disagree.
+.PHONY: logo
+logo:
+	@for s in 16 32 48 64 128 256 512 1024; do \
+		rsvg-convert -w $$s -h $$s web/assets/logo.svg -o web/assets/logo-$$s.png; \
+	done
+	@convert web/assets/logo-16.png web/assets/logo-32.png web/assets/logo-48.png web/assets/favicon.ico
+	@echo "re-exported web/assets/logo-*.png and favicon.ico"
+
 ## serve: build it, then serve it with nginx on localhost (see DOCS_PORT)
 .PHONY: serve
 serve:

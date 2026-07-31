@@ -49,7 +49,15 @@ func build(cataloguePath, output, version string, index bool) error {
 		return err
 	}
 
-	files, err := site.Render(docs.SiteOf(bundles, docs.Options{Version: version}))
+	// The SDK's default title is "whoctl registry", which was fine when this
+	// was the only thing published here. It is not any more: the registry is
+	// now the index next door, and two things called that is one too many.
+	repos := map[string]string{}
+	for _, s := range catalogue.Providers {
+		repos[s.Name] = s.Repository
+	}
+
+	files, err := site.Render(docs.SiteOf(bundles, docs.Options{Title: "whoctl docs", Version: version}), repos)
 	if err != nil {
 		return err
 	}

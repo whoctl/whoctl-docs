@@ -1,9 +1,10 @@
 {{define "browse.html" -}}
 <section class="hero">
   <h1>Browse providers</h1>
-  <p class="lede">Every provider compiled into this build of whoctl. They all speak the same
-  verbs — <code>get</code>, <code>describe</code>, <code>apply</code>, <code>edit</code>,
-  <code>delete</code> — over the same manifest shape.</p>
+  <p class="lede">Every provider whoctl can install. They all speak the same verbs —
+  <code>get</code>, <code>describe</code>, <code>apply</code>, <code>edit</code>,
+  <code>delete</code> — over the same manifest shape, and none of them ships with
+  the tool: naming one is what installs it.</p>
   <input id="filter" class="filter" type="search" placeholder="Filter providers and resources" autocomplete="off">
 </section>
 
@@ -13,6 +14,7 @@
     <a class="card" href="{{$.Root}}providers/{{.Name}}/index.html"
        data-terms="{{.Name}} {{.DisplayName}} {{.Summary}} {{range .Resources}}{{.Kind}} {{.Plural}} {{end}}">
       <div class="card-head">
+        <img class="pico" src="{{$.Root}}{{icon .Name}}" alt="" width="34" height="34">
         <h2>{{.DisplayName}}</h2>
         {{if .Maturity}}<span class="badge maturity">{{.Maturity}}</span>{{end}}
       </div>

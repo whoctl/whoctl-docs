@@ -33,13 +33,19 @@
 {{define "provider-head" -}}
 <section class="provider-head">
   <div class="wrap">
-    <p class="crumbs"><a href="{{.Root}}index.html">Providers</a> <span>/</span> {{.Provider.DisplayName}}</p>
-    <h1>{{.Provider.DisplayName}}</h1>
-    <p class="lede">{{.Provider.Summary}}</p>
+    <p class="crumbs"><a href="{{.Root}}providers/index.html">Providers</a> <span>/</span> {{.Provider.DisplayName}}</p>
+    <div class="identity-row">
+      <img class="pico big" src="{{.Root}}{{icon .Provider.Name}}" alt="" width="56" height="56">
+      <div>
+        <h1>{{.Provider.DisplayName}}</h1>
+        <p class="lede">{{.Provider.Summary}}</p>
+      </div>
+    </div>
     <div class="card-meta">
       {{range .Provider.Groups}}<code class="group">{{.}}</code>{{end}}
       {{if .Provider.Maturity}}<span class="badge maturity">{{.Provider.Maturity}}</span>{{end}}
       {{range .Provider.Categories}}<span class="badge">{{.}}</span>{{end}}
+      {{if .Repo}}<a class="badge repo" href="https://github.com/{{.Repo}}">{{.Repo}}</a>{{end}}
     </div>
     {{template "tabs" .}}
   </div>

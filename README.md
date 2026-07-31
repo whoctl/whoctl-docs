@@ -38,7 +38,7 @@ site from providers checked out beside it before anything is published.
 | --- | --- |
 | `providers.yaml` | Which providers the site covers, at which versions, and which repositories publish them. |
 | `web/templates` | The HTML the site is rendered into. |
-| `web/assets` | One stylesheet. See below. |
+| `web/assets` | One stylesheet, and the brand files. See below. |
 | `internal/site` | Reading the catalogue and the bundles, markdown to HTML, the resource pages, the browse index, and the syntax highlighter. |
 | `internal/registry` | The registry index: what whoctl installs from. |
 | `cmd/whoctl-docs` | The builder. |
@@ -90,6 +90,13 @@ and setting either alone stops installation:
 ```sh
 make keygen
 ```
+
+## The mark
+
+`web/assets/logo.svg` is the source. The PNGs beside it — 16 through 1024 — and
+`favicon.ico` are exports, committed rather than built, and regenerated with
+`make logo` (which needs librsvg and ImageMagick). All of them are published, so
+the site itself is where to point somebody who wants the logo.
 
 ## The site has no external assets
 
