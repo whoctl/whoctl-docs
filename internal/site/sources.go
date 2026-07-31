@@ -12,6 +12,7 @@ import (
 	"github.com/whoctl/whoctl-sdk-go/docs"
 	"gopkg.in/yaml.v3"
 
+	"github.com/whoctl/whoctl-docs/internal/fetch"
 	"github.com/whoctl/whoctl-docs/internal/registry"
 )
 
@@ -117,11 +118,7 @@ func fetchBundle(ctx context.Context, client *http.Client, source Source) (*docs
 		return docs.ReadBundle(f)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, source.Bundle, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := client.Do(req)
+	resp, err := fetch.Get(ctx, client, source.Bundle, nil)
 	if err != nil {
 		return nil, err
 	}

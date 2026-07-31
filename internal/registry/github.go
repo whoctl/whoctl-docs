@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/whoctl/whoctl-docs/internal/fetch"
 )
 
 // maxPages bounds pagination. A hundred releases per page and five pages is far
@@ -159,19 +161,11 @@ func (g *GitHub) checksum(ctx context.Context, url string) (string, error) {
 }
 
 func (g *GitHub) get(ctx context.Context, url string) (io.ReadCloser, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
+	header := http.Header{"Accept": {"application/vnd.github+json"}}
 	if g.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+g.Token)
+		header.Set("Authorization", "Bearer "+g.Token)
 	}
-	client := g.HTTP
-	if client == nil {
-		client = http.DefaultClient
-	}
-	resp, err := client.Do(req)
+	resp, err := fetch.Get(ctx, g.HTTP, url, header)
 	if err != nil {
 		return nil, err
 	}
