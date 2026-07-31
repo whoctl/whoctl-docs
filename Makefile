@@ -38,6 +38,11 @@ local:
 	done
 	@echo "wrote providers.local.yaml"
 
+## keygen: generate the registry signing key pair (run once, by a person)
+.PHONY: keygen
+keygen:
+	@go run ./cmd/keygen
+
 ## serve: build it, then serve it with nginx on localhost (see DOCS_PORT)
 .PHONY: serve
 serve:

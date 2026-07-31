@@ -2,11 +2,13 @@
 
 The whoctl documentation site: templates, styles, and the builder that turns
 every provider's published documentation into one static site, served by GitHub
-Pages.
+Pages. The same build writes the **registry index** whoctl installs providers
+from, and Pages serves that too.
 
-Nothing here is part of the tool. `whoctl` ships no templates and no CSS; a
-provider ships prose and a schema. This repository is what turns the second into
-a website.
+`whoctl` ships no templates and no CSS; a provider ships prose and a schema, and
+this repository turns the second into a website. The index is the one thing here
+that is part of the tool rather than about it — it is here because it answers
+the same question from the same file: which providers are there.
 
 ## How a page gets here
 
@@ -34,14 +36,59 @@ site from providers checked out beside it before anything is published.
 
 | Path | Role |
 | --- | --- |
-| `providers.yaml` | Which providers the site covers, and at which versions. |
+| `providers.yaml` | Which providers the site covers, at which versions, and which repositories publish them. |
 | `web/templates` | The HTML the site is rendered into. |
 | `web/assets` | One stylesheet. See below. |
 | `internal/site` | Reading the catalogue and the bundles, markdown to HTML, the resource pages, the browse index, and the syntax highlighter. |
+| `internal/registry` | The registry index: what whoctl installs from. |
 | `cmd/whoctl-docs` | The builder. |
+| `cmd/keygen` | Generates the signing key pair, once, by hand. |
 
 ```sh
-go run ./cmd/whoctl-docs -o site
+make build            # site/ and site/registry/
+make local && make build   # against provider checkouts beside this one
+```
+
+## The registry index
+
+`whoctl get linux/users` on a machine with no provider installed reads two small
+files:
+
+```
+/registry/whoctl/linux/versions.json
+/registry/whoctl/linux/0.1.0/linux_amd64.json
+```
+
+The second says where the archive is, what it hashes to, and — once a key is
+configured — who signed it. whoctl refuses to install anything it cannot verify
+against that, so an archive published with no checksum beside it is left out of
+the index rather than offered and rejected on somebody's machine.
+
+**The index is derived from the GitHub releases API, not accumulated.** Every
+build asks what is published right now and writes the answer whole, so a yanked
+release disappears on the next build. `repository` in a catalogue entry is what
+makes a provider installable; an entry without one is documented and not
+indexed, which is exactly what `make local` produces.
+
+### Publishing
+
+`.github/workflows/pages.yml` builds and deploys on a push here, on the nightly
+schedule, and on a `repository_dispatch` that each provider's release sends. Two
+secrets, both optional and both with consequences:
+
+| Secret | Where | Without it |
+| --- | --- | --- |
+| `WHOCTL_DOCS_TOKEN` | each provider repository | A release does not notify the site; it catches up on the nightly run. |
+| `WHOCTL_SIGNING_KEY` | here | The index is published unsigned, and providers are verified by checksum alone. |
+
+A checksum published by whoever published the binary proves the download was not
+corrupted in transit and nothing else. Only the signature says who published it.
+Generate the key once, keep the private half here and nowhere else, and put the
+public half in whoctl's `officialKeyHex` in the same change — they are a pair,
+and setting either alone stops installation:
+
+```sh
+make keygen
 ```
 
 ## The site has no external assets

@@ -8,13 +8,23 @@
 # workflow. `latest` follows whatever it published most recently; pin a tag to
 # hold a version.
 #
+# `repository` is a second, heavier job for the same file: the published
+# releases of that repository are what the registry index is derived from, so a
+# line here is also what makes a provider installable. Removing one takes the
+# provider off the site and out of the index together, which is the point —
+# documenting a version nobody can install, or serving one nobody documented,
+# are both worse than serving neither.
+#
 # For local work against sibling checkouts, `make local` writes a
 # providers.local.yaml pointing at them, and the build prefers it when present.
+# Those entries have no repository: nothing is published, so nothing is indexed.
 providers:
   - name: linux
     version: latest
     bundle: https://github.com/whoctl/whoctl-provider-linux/releases/latest/download/docs-bundle.json
+    repository: whoctl/whoctl-provider-linux
 
   - name: steam
     version: latest
     bundle: https://github.com/whoctl/whoctl-provider-steam/releases/latest/download/docs-bundle.json
+    repository: whoctl/whoctl-provider-steam

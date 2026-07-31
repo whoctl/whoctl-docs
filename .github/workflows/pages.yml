@@ -33,9 +33,21 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: build the site
+      - name: build the site and the registry index
         # One unreadable bundle fails this on purpose: a site quietly missing a
-        # provider is much harder to notice than a build that stopped.
+        # provider is much harder to notice than a build that stopped. The same
+        # holds for the index, where the failure is louder still — a provider
+        # missing from it cannot be installed at all.
+        env:
+          # The index is derived from the GitHub releases API, which allows
+          # sixty requests an hour to an unauthenticated caller and shares that
+          # allowance with everything else on the runner.
+          GITHUB_TOKEN: ${{ github.token }}
+          # Without this the index is published unsigned, which whoctl accepts
+          # only because its officialKeyHex is empty too. Setting one without
+          # the other is what breaks installation: the key is a matched pair,
+          # and the public half ships compiled into whoctl.
+          WHOCTL_SIGNING_KEY: ${{ secrets.WHOCTL_SIGNING_KEY }}
         run: make build OUTPUT=site VERSION=${{ github.sha }}
       - uses: actions/upload-pages-artifact@v3
         with:
