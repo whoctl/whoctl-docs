@@ -7,6 +7,87 @@ curl -fsSL https://raw.githubusercontent.com/whoctl/whoctl/main/install.sh | sh
 On Windows, take `whoctl-windows-amd64.exe` from the
 [releases page](https://github.com/whoctl/whoctl/releases/latest).
 
+## Two ways to run it, and the provider cannot tell them apart
+
+**On your own machine.** whoctl starts the providers itself, and they act as
+whoever you are — your `~/.aws`, your SSO session, your uid. Nothing is
+configured and nothing is shared.
+
+```console
+$ whoctl get linux/users
+$ AWS_PROFILE=prod whoctl get aws/route53/hostedzones
+```
+
+**As a server.** One machine holds the configuration — ten AWS accounts, a
+CoreDNS per edge box — and hands each out as a cluster. whoctl answers
+Kubernetes' own API, so the clients are ones people already have:
+
+```console
+$ whoctl serve -f whoctl.yaml
+whoctl serving on http://127.0.0.1:8080
+  context machine        http://127.0.0.1:8080/contexts/machine
+  context prod           http://127.0.0.1:8080/contexts/prod
+
+$ kubectl --server http://127.0.0.1:8080/contexts/machine get users
+NAME     UID     GID     GROUP    SHELL
+root     0       0       root     /bin/bash
+alice    1000    1000    alice    /bin/sh
+```
+
+kubectl takes the address on the command line. k9s and Lens want a kubeconfig,
+which is the same address in the shape they read:
+
+```yaml
+apiVersion: v1
+kind: Config
+clusters:
+  - name: whoctl-prod
+    cluster:
+      server: http://127.0.0.1:8080/contexts/prod
+contexts:
+  - name: whoctl-prod
+    context: {cluster: whoctl-prod, user: whoctl}
+users:
+  - name: whoctl
+    user: {}
+current-context: whoctl-prod
+```
+
+A context is a cluster and nothing else has to be true for that: point
+`KUBECONFIG` at the file and every one of them opens.
+
+The provider is the same binary in both, and **cannot tell which of the two
+started it**. That is the whole design rather than a coincidence: the only thing
+that differs is who writes the process's environment — your shell, or the
+server, per context. There is no credential field on a manifest, no flag on
+whoctl, and no branch inside a provider for it.
+
+### What a server can reach, per provider
+
+"Remote" is not one answer, because a provider reaches whatever it reaches:
+
+| Provider | A context can serve |
+| --- | --- |
+| `aws` | any account its credentials reach. Genuinely remote — a server holds ten and the machine it runs on is irrelevant. |
+| `coredns` | a tree the server can open: a mounted image, an rsync'd copy, a local install. |
+| `steam` | the same — an installation on a path it can read. |
+| `linux` | **the machine the server itself runs on.** It reads `/etc` and shells out to `useradd`, and both happen where the process is. |
+
+That last row is the one to know before building on it: ten machines are ten
+servers today. A remote mode for `linux` — reaching another host over ssh — is a
+real design and is not built.
+
+### And two things that are not there yet
+
+**whoctl itself cannot point at a server.** There is no `--server` flag: the
+clients are kubectl, k9s and Lens. Running whoctl by hand always runs the
+providers locally, as you.
+
+**A server listens on loopback and refuses anything else.** There is no
+authentication, so anybody who reached the port would act with every credential
+the contexts hold. The refusal happens before it serves anything and there is no
+flag to override it. That changes when authentication exists, and not before.
+
 ## The first command installs what it needs
 
 whoctl ships with no provider. The first command that says `linux/` fetches the
@@ -188,11 +269,13 @@ files stay.
 
 ## Serving it to kubectl, k9s and Lens
 
-`whoctl serve` answers Kubernetes' own API, so somebody holding nothing but
-kubectl, k9s or Lens can point at it and work. Nothing is translated on the way
-out: a kind is already a group, a version and a kind, `metadata` already carries
-what a client reads, and the columns a provider published are what the server
-prints.
+The configuration behind the second of the two ways above.
+
+Nothing is translated on the way out: a kind is already a group, a version and
+a kind, `metadata` already carries what a client reads, and the columns a
+provider published are what the server prints. Each provider's own page says
+what its context needs — which environment variables, what a namespace means
+there, and whether anything it serves can answer the pod view.
 
 Each context in the configuration is a cluster to whoever connects, served under
 its own path. That is how one server offers several: the provider is the same
@@ -234,13 +317,6 @@ and then a client points at one context:
 ```sh
 kubectl --server http://127.0.0.1:8080/contexts/machine api-resources
 ```
-
-### It listens on loopback and refuses anything else
-
-There is no authentication yet. A server holding a configured AWS profile acts
-for anybody who can reach the port, so a non-loopback address is refused rather
-than warned about — the check runs before it serves anything, and there is no
-flag to override it. That changes when authentication exists, and not before.
 
 ### What a client sees
 
