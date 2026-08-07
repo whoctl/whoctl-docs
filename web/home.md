@@ -24,14 +24,24 @@ Kubernetes' own API, so the clients are ones people already have:
 
 ```console
 $ whoctl serve -f whoctl.yaml
-whoctl serving on http://127.0.0.1:8080
-  context machine        http://127.0.0.1:8080/contexts/machine
-  context prod           http://127.0.0.1:8080/contexts/prod
+whoctl serving on http://127.0.0.1:6443
+  context machine        http://127.0.0.1:6443/contexts/machine
+  context prod           http://127.0.0.1:6443/contexts/prod
 
-$ kubectl --server http://127.0.0.1:8080/contexts/machine get users
+$ kubectl --server http://127.0.0.1:6443/contexts/machine get users
 NAME     UID     GID     GROUP    SHELL
 root     0       0       root     /bin/bash
 alice    1000    1000    alice    /bin/sh
+```
+
+**whoctl speaks to it too.** `--server` reads through a server instead of
+running providers here, and every verb, flag and output format is the one you
+already type:
+
+```console
+$ whoctl get linux/users --server http://127.0.0.1:6443/contexts/machine
+$ export WHOCTL_SERVER=http://127.0.0.1:6443/contexts/prod
+$ whoctl get aws/route53/hostedzones
 ```
 
 kubectl takes the address on the command line. k9s and Lens want a kubeconfig,
@@ -43,7 +53,7 @@ kind: Config
 clusters:
   - name: whoctl-prod
     cluster:
-      server: http://127.0.0.1:8080/contexts/prod
+      server: http://127.0.0.1:6443/contexts/prod
 contexts:
   - name: whoctl-prod
     context: {cluster: whoctl-prod, user: whoctl}
@@ -77,11 +87,30 @@ That last row is the one to know before building on it: ten machines are ten
 servers today. A remote mode for `linux` — reaching another host over ssh — is a
 real design and is not built.
 
-### And two things that are not there yet
+### What whoctl gives you that kubectl does not
 
-**whoctl itself cannot point at a server.** There is no `--server` flag: the
-clients are kubectl, k9s and Lens. Running whoctl by hand always runs the
-providers locally, as you.
+kubectl works, completely, and for a Kubernetes shop that is the point. What the
+other binary is for:
+
+| | kubectl | whoctl |
+| --- | --- | --- |
+| Addressing | `kubectl get hostedzones.route53.aws.whoctl.io` | `whoctl get aws/route53/hostedzones` — the group as a path, and `aws/hz` when nothing collides |
+| Which provider | not a concept: a kind is a group | in every name, so `linux/users` and `aws/users` never get confused for each other |
+| `describe` | the object's fields | the fields **and what the provider says each one means** |
+| Off a server | needs a cluster | the same command runs the providers locally, with no server at all |
+| Setup | a kubeconfig | an address, or none |
+
+The addressing is the one that shows up on every line. A kind's group is a path
+read backwards — `route53.aws.whoctl.io` is `aws/route53` — and whoctl reads it
+that way against a server exactly as it does locally, because the server says
+which provider serves each kind in an annotation on the definition.
+
+The documentation is the one that shows up when something is unfamiliar.
+`whoctl describe` against a server shows the provider's own doc text for every
+field, because it travelled in the definition's `description` — the same place a
+CRD keeps exactly this.
+
+### One thing that is not there yet
 
 **A server listens on loopback and refuses anything else.** There is no
 authentication, so anybody who reached the port would act with every credential
@@ -284,7 +313,9 @@ binary each time and cannot tell which of them it is serving.
 ```yaml
 apiVersion: whoctl.io/v1alpha1
 kind: ServerConfig
-listen: 127.0.0.1:8080
+listen: 127.0.0.1:6443
+# Kubernetes' own port, so pointing a client here is the same gesture as
+# pointing it at a cluster — and so it is not 8080, which everything wants.
 
 contexts:
   - name: machine
@@ -304,7 +335,7 @@ contexts:
 
 ```console
 $ whoctl serve -f whoctl.yaml --check
-would listen on 127.0.0.1:8080
+would listen on 127.0.0.1:6443
 
 context "machine" — 15 kinds at /contexts/machine
   groups                       linux.whoctl.io/v1alpha1
@@ -315,7 +346,7 @@ context "machine" — 15 kinds at /contexts/machine
 and then a client points at one context:
 
 ```sh
-kubectl --server http://127.0.0.1:8080/contexts/machine api-resources
+kubectl --server http://127.0.0.1:6443/contexts/machine api-resources
 ```
 
 ### What a client sees
