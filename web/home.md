@@ -25,7 +25,7 @@ nobody   65534   65534   nobody   /sbin/nologin
 Providers live under `~/.whoctl`. `whoctl upgrade` moves them forward;
 `--offline` uses only what is there and never reaches the network.
 
-## A resource is always `provider/resource`
+## A resource always carries its provider
 
 The prefix is not optional:
 
@@ -38,6 +38,16 @@ error: resource "users" needs its provider: try linux/users
 kind of the same name the guess whoctl would have to make is the kind of mistake
 that deletes the wrong account. Within that, the plural, the singular and any
 short name all work — `linux/users`, `linux/user`, `linux/usr`.
+
+A provider covering a cloud groups its kinds the way that cloud does, and the
+group sits between the provider and the resource — `aws/route53/hostedzones`.
+The group can be left out while nothing else answers to the name, and when
+something does, the answer names both rather than guessing:
+
+```console
+$ whoctl get aws/instances
+error: resource "aws/instances" is ambiguous between aws/ec2/instances, aws/rds/instances
+```
 
 ## Reading
 
