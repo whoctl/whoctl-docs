@@ -91,6 +91,43 @@ linux/group/developers
 $ whoctl describe linux/group/developers
 ```
 
+### Narrowing what comes back
+
+The four flags Kubernetes uses, meaning what they mean there:
+
+```console
+$ whoctl get coredns/servers -l coredns.whoctl.io/port=5353
+NAME                 ZONES            PORT   PLUGINS   UPSTREAM   AGE
+internal.test-5353   internal.test.   5353   3         -          1h
+
+$ whoctl get coredns/zones --field-selector status.records=3
+NAME          RECORDS   SERIAL       TTL   SERVERS          AGE
+example.org   3         2026080502   300   example.com-53   1h
+```
+
+`-l` matches labels and `--field-selector` matches a path spelled the way the
+manifest spells it. A provider *may* push either down — the aws provider turns
+`status.state=running` into an EC2 filter, so the query is smaller rather than
+the answer — but whoctl applies both again to whatever comes back. A provider
+that ignores them is slower and never wrong, and the flags mean the same thing
+against a provider whoctl has never seen.
+
+`-n` picks a namespace and `-A` asks for every one. What a namespace *is* stays
+the provider's business: a region for aws, nothing at all for a kind that is
+global. Neither flag says anything to a kind that has no namespace.
+
+```console
+$ whoctl get aws/ec2/instances -A
+NAME                  REGION      TYPE       STATE     PRIVATE-IP       AGE
+i-979bf6bd5634adbc5   us-east-1   t3.micro   running   10.32.147.206    3s
+i-bd2c658825f7ab669   us-east-1   t3.micro   running   10.140.149.192   3s
+```
+
+Asking for neither is a third thing, not the same as `-A`: it means whichever
+namespace the provider calls its default, and only the provider can answer that
+— the aws provider's default region comes from the same AWS configuration it
+authenticates with.
+
 ## Changing
 
 The object you read is the object you apply. `get -o yaml` produces a manifest
@@ -149,11 +186,97 @@ again. It takes names or a manifest, never a wildcard, and `--cascade` is what
 says the home directory goes too — without it the account is removed and the
 files stay.
 
+## Serving it to kubectl, k9s and Lens
+
+`whoctl serve` answers Kubernetes' own API, so somebody holding nothing but
+kubectl, k9s or Lens can point at it and work. Nothing is translated on the way
+out: a kind is already a group, a version and a kind, `metadata` already carries
+what a client reads, and the columns a provider published are what the server
+prints.
+
+Each context in the configuration is a cluster to whoever connects, served under
+its own path. That is how one server offers several: the provider is the same
+binary each time and cannot tell which of them it is serving.
+
+```yaml
+apiVersion: whoctl.io/v1alpha1
+kind: ServerConfig
+listen: 127.0.0.1:8080
+
+contexts:
+  - name: machine
+    provider: linux
+
+  # One AWS account. The environment is the whole mechanism: the provider reads
+  # its own vendor's credential chain from there, exactly as it would if a
+  # person had exported the same variables in a shell.
+  - name: prod
+    provider: aws
+    env:
+      AWS_REGION: us-east-1
+      AWS_PROFILE: prod
+```
+
+`--check` says what it would serve without listening:
+
+```console
+$ whoctl serve -f whoctl.yaml --check
+would listen on 127.0.0.1:8080
+
+context "machine" — 15 kinds at /contexts/machine
+  groups                       linux.whoctl.io/v1alpha1
+  users                        linux.whoctl.io/v1alpha1
+  ...
+```
+
+and then a client points at one context:
+
+```sh
+kubectl --server http://127.0.0.1:8080/contexts/machine api-resources
+```
+
+### It listens on loopback and refuses anything else
+
+There is no authentication yet. A server holding a configured AWS profile acts
+for anybody who can reach the port, so a non-loopback address is refused rather
+than warned about — the check runs before it serves anything, and there is no
+flag to override it. That changes when authentication exists, and not before.
+
+### What a client sees
+
+The definitions under `apiextensions.k8s.io` are synthesized: their content is
+read from what the provider published, so it is accurate, but nothing installed
+them and every one says so in an annotation. A client's tree of custom resources
+is built from these.
+
+`pods` is a shim, and off unless a context asks for it. k9s opens on a pod view,
+so a context may nominate a kind to answer it — `pods: processes.linux.whoctl.io`
+— and what that costs is real: a client that finds `pods` assumes `v1/Pod`, so
+`/log`, exec and `kubectl get pods -o yaml` all mean something they do not. It
+is off by default for that reason.
+
 ## What else is there
 
 `whoctl resources` lists every kind the installed providers serve, with the
-short names and what each one can do. `whoctl providers` lists what this machine
-has and at which version.
+short names and what each one can do.
+
+`whoctl providers` answers "which binaries am I actually running", which is a
+harder question than it sounds once a provider is being built in a checkout
+rather than installed:
+
+```console
+$ whoctl providers
+NAME      VERSION   PROTOCOL   BUILT   PATH
+coredns   dev       2          1h      /home/dev/whoctl/bin/whoctl-provider-coredns
+linux     0.1.0     2          6d      /home/dev/.whoctl/providers/whoctl/linux/0.1.0/whoctl-provider-linux
+steam     -         -          1y      /usr/local/bin/whoctl-provider-steam
+
+steam did not start and was skipped: provider "steam" speaks protocol 1, whoctl speaks 2
+```
+
+A provider that would not start is still listed, because leaving it out makes a
+skipped provider look like one nobody installed. `whoctl version` reports the
+protocol whoctl speaks, which is the other half of that answer.
 
 Each provider documents its own kinds — **[browse them](providers/index.html)**.
 
