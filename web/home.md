@@ -349,6 +349,28 @@ and then a client points at one context:
 kubectl --server http://127.0.0.1:6443/contexts/machine api-resources
 ```
 
+### Browsing it
+
+Every context serves `/swagger/`, which renders what its providers publish — the
+kinds, their fields, and the sentence each provider wrote about each one. The
+address is on the server's own index page, so nobody has to be told it exists.
+
+The same documents answer `kubectl explain`:
+
+```console
+$ kubectl --server http://127.0.0.1:6443/contexts/dns explain zones.spec
+FIELD: spec <Object>
+
+FIELDS:
+  file	<string> -required-
+    The zone file, exactly as the Corefile's file directive names it.
+```
+
+Neither is generated from this codebase. A kind reaches the server over the
+protocol at runtime, so there is no Go type here to read annotations off — what
+both of those print is the provider's own documentation, the same text this site
+shows on its page.
+
 ### What a client sees
 
 The definitions under `apiextensions.k8s.io` are synthesized: their content is
