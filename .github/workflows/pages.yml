@@ -33,6 +33,23 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      # What the header badge shows. It used to be github.sha, which put a
+      # forty-character hash in the corner of every page — true, and no use to
+      # anybody: the site documents a released whoctl, and "which release is
+      # this" is the question the badge is in the corner to answer.
+      #
+      # The fallback is a short sha rather than the long one, because there is a
+      # window before the first release where there is no tag to show and a
+      # truncated hash is at least readable.
+      - name: the version the header shows
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag=$(gh release view --repo whoctl/whoctl --json tagName -q .tagName 2>/dev/null || true)
+          echo "value=${tag:-${GITHUB_SHA::7}}" >> "$GITHUB_OUTPUT"
+          echo "header will show: ${tag:-${GITHUB_SHA::7}}"
+
       - name: build the site and the registry index
         # One unreadable bundle fails this on purpose: a site quietly missing a
         # provider is much harder to notice than a build that stopped. The same
@@ -48,7 +65,7 @@ jobs:
           # the other is what breaks installation: the key is a matched pair,
           # and the public half ships compiled into whoctl.
           WHOCTL_SIGNING_KEY: ${{ secrets.WHOCTL_SIGNING_KEY }}
-        run: make build OUTPUT=site VERSION=${{ github.sha }}
+        run: make build OUTPUT=site VERSION=${{ steps.version.outputs.value }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

@@ -48,6 +48,14 @@
 
 * { box-sizing: border-box; }
 
+/* The browser's own stylesheet says [hidden] { display: none }, and any author
+   rule that sets display beats it — .card sets `display: block`, so the filter
+   on the browse page set the attribute and hid nothing at all. This is the rule
+   that makes `hidden` mean hidden, and it needs !important for the same reason
+   the bug existed: it has to win against whatever set display in the first
+   place. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
