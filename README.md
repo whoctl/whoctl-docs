@@ -91,9 +91,23 @@ simply is not who should own the release path of a project several people work
 on. GitHub has no such thing as an organization token.
 
 A GitHub App is owned by the organization. Create one under `whoctl` → Settings
-→ Developer settings → GitHub Apps with **Contents: Read and write**, install it
-on `whoctl-docs` and nowhere else, and put its id and private key in the two
-entries above. Each run mints a token that lives an hour and does not exist
+→ Developer settings → GitHub Apps with **Actions: Read and write** — and
+nothing else, in particular not Contents — install it on `whoctl-docs` and
+nowhere else, and put its id and private key in the two entries above.
+
+Actions rather than Contents because starting a build is all it does.
+`contents: write` is the right to edit this repository: point `providers.yaml`
+at somebody else's repository and the next build signs and publishes that index.
+The signing key never leaves here, so nobody forges a signature — they get the
+real one applied to their content. A key that can start a build and change
+nothing is the smaller thing to lose.
+
+Give both entries **Selected repositories**, naming the providers. "All
+repositories" reads as less maintenance and is the opposite: every workflow in
+every repository can then read them, including one somebody adds later, and
+including a `pull_request_target` — which, unlike `pull_request`, runs a fork's
+code with the secrets present. Adding a repository to the list is one click at
+the moment it is created. Each run mints a token that lives an hour and does not exist
 between runs, and nothing about it survives anybody leaving.
 
 The dispatch is the fast path and not the only one. Without it every release

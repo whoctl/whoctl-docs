@@ -4,10 +4,14 @@ on:
   # A change to the templates, the styles or the catalogue.
   push:
     branches: [main]
-  # A provider published a release. Its workflow sends this; see the note in
-  # the README about the token that needs.
-  repository_dispatch:
-    types: [provider-released]
+  # A provider published a release. Its workflow starts this run through the
+  # app the organization owns — see the note in the README.
+  #
+  # It is workflow_dispatch and not repository_dispatch on purpose: the first
+  # needs `actions: write` and the second needs `contents: write`, and the
+  # difference is whether a stolen key can edit this repository. It can change
+  # providers.yaml, and the next build would sign and publish whatever it
+  # named.
   # A safety net: a dispatch that never arrives — a revoked token, a workflow
   # that failed after publishing — would otherwise leave the site behind
   # forever, and nobody would notice until they looked.
