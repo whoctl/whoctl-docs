@@ -52,11 +52,15 @@ belongs in the SDK first, where both sides can import one definition.
 
 **A release reaches the site two ways, and only one of them is fast.** The
 nightly schedule always catches up; the cross-repository dispatch is what makes
-a release installable within minutes, and it needs `WHOCTL_DOCS_TOKEN` — a token
-with `contents: write` here — as an **organization secret on `whoctl`**, shared
-with the provider repositories rather than copied into each one. It cannot be
-`GITHUB_TOKEN`: GitHub scopes that to the repository running the workflow, so
-writing to a sibling inside the same organization still needs a credential. Without it the release still succeeds and the site still
+a release installable within minutes, and it comes from a **GitHub App owned by the
+organization** — `WHOCTL_DOCS_APP_ID` as an org variable, `WHOCTL_DOCS_APP_KEY`
+as an org secret, and each run mints a token that lives an hour.
+
+It cannot be `GITHUB_TOKEN`: GitHub scopes that to the repository running the
+workflow, so writing to a sibling inside the same organization still needs a
+credential. And it should not be a personal access token, which is the other
+thing that works: GitHub has no organization-owned token, so a PAT belongs to
+whoever made it and leaves when they do. Without it the release still succeeds and the site still
 catches up, which is why a missing token looks exactly like a working one: the
 only symptom is a version somebody cannot install yet. The release workflows now
 say so in their log rather than skipping in silence.

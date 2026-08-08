@@ -78,19 +78,28 @@ secrets, both optional and both with consequences:
 
 | Secret | Where | Without it |
 | --- | --- | --- |
-| `WHOCTL_DOCS_TOKEN` | an organization secret on `whoctl`, shared with every provider repository | A release does not notify the site; it catches up on the nightly run. |
+| `WHOCTL_DOCS_APP_ID` | an organization **variable** on `whoctl` — the id is not a secret | A release does not notify the site; it catches up on the nightly run. |
+| `WHOCTL_DOCS_APP_KEY` | an organization **secret** on `whoctl` — the app's private key | The same. |
 | `WHOCTL_SIGNING_KEY` | here | The index is published unsigned, and providers are verified by checksum alone. |
 
-An organization secret rather than one per repository, because it is the same
-token answering the same question for every provider — and because the day
-somebody rotates it, a per-repository copy is six places to remember and one to
-forget.
+### The app, and why it is an app
 
-The dispatch is the fast path and not the only one. Without the token every
-release still reaches the site on the nightly schedule; the difference is
-minutes against up to a day. `GITHUB_TOKEN` cannot do it: GitHub scopes it to
-the repository running the workflow, so writing to a sibling — even inside one
-organization — needs a credential of its own.
+`GITHUB_TOKEN` is scoped to the repository running the workflow, so it cannot
+write to a sibling even inside one organization. A personal access token can,
+and is the wrong instrument: it belongs to a person, who leaves, revokes it, or
+simply is not who should own the release path of a project several people work
+on. GitHub has no such thing as an organization token.
+
+A GitHub App is owned by the organization. Create one under `whoctl` → Settings
+→ Developer settings → GitHub Apps with **Contents: Read and write**, install it
+on `whoctl-docs` and nowhere else, and put its id and private key in the two
+entries above. Each run mints a token that lives an hour and does not exist
+between runs, and nothing about it survives anybody leaving.
+
+The dispatch is the fast path and not the only one. Without it every release
+still reaches the site on the nightly schedule; the difference is minutes
+against up to a day, which is why a release whose notification failed is a
+warning in the log rather than a red build.
 
 A checksum published by whoever published the binary proves the download was not
 corrupted in transit and nothing else. Only the signature says who published it.
