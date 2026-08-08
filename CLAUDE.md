@@ -67,6 +67,13 @@ and whoctl with a key against an unsigned index is refused too. Generate the key
 once, keep the private half in this repository's secrets and nowhere else, and
 put the public half in whoctl in the same change.
 
+**The whoctl binary carries a copy of the mark**, because a server renders its
+own page with no site checked out beside it and no route to the internet —
+which is ordinary for something holding infrastructure credentials. Two copies
+of one file drift, so `web/brand_test.go` compares them whenever whoctl is
+checked out beside this repository, and skips when it is not: a lone clone
+cannot fix a file it does not have. The mark lives here; that copy follows it.
+
 **The mark is `web/assets/logo.svg`, and everything else is an export of it.**
 The PNGs and the .ico are committed rather than built, because rasterizing needs
 librsvg and ImageMagick and CI has no business depending on either for a file
