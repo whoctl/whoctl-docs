@@ -36,7 +36,11 @@ fi
 
 site="$root/$output"
 if [ ! -f "$site/index.html" ]; then
-	echo "no site at $site; run `make build` first" >&2
+	# Single quotes around the command: in double quotes those backticks are
+	# command substitution, so this message ran `make build` instead of naming
+	# it — in the one path where the site is missing, which is exactly when
+	# building unasked is least welcome.
+	echo "no site at $site; run 'make build' first" >&2
 	exit 1
 fi
 

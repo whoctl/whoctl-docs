@@ -28,3 +28,13 @@ providers:
     version: latest
     bundle: https://github.com/whoctl/whoctl-provider-steam/releases/latest/download/docs-bundle.json
     repository: whoctl/whoctl-provider-steam
+
+  - name: aws
+    version: latest
+    bundle: https://github.com/whoctl/whoctl-provider-aws/releases/latest/download/docs-bundle.json
+    repository: whoctl/whoctl-provider-aws
+
+  - name: coredns
+    version: latest
+    bundle: https://github.com/whoctl/whoctl-provider-coredns/releases/latest/download/docs-bundle.json
+    repository: whoctl/whoctl-provider-coredns
