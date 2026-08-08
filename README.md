@@ -102,12 +102,25 @@ The signing key never leaves here, so nobody forges a signature — they get the
 real one applied to their content. A key that can start a build and change
 nothing is the smaller thing to lose.
 
-Give both entries **Selected repositories**, naming the providers. "All
-repositories" reads as less maintenance and is the opposite: every workflow in
-every repository can then read them, including one somebody adds later, and
-including a `pull_request_target` — which, unlike `pull_request`, runs a fork's
-code with the secrets present. Adding a repository to the list is one click at
-the moment it is created. Each run mints a token that lives an hour and does not exist
+### What actually keeps the key out of a stranger's hands
+
+Two properties, and neither is the access list:
+
+- **The key is named in one workflow, and that workflow runs on a tag push.** A
+  pull request cannot start it, from a fork or from anywhere.
+- **No workflow uses `pull_request_target`.** The ordinary `pull_request` event
+  runs a fork's code *without* secrets, which is GitHub withholding them on
+  purpose. `pull_request_target` runs that same code with the secrets present,
+  in the base repository's context, and is the standard way this leaks.
+
+Both are true today by design rather than by luck, and both are worth checking
+before adding a workflow that wants a secret in a pull request.
+
+Give both entries **Selected repositories** anyway, naming the providers. It
+changes nothing for those four — the two rules above are what protect them —
+and it is the whole of the protection for every *other* repository: with "All
+repositories" the key reaches whoctl, whoctl-sdk-go, whoctl-docs and everything
+created from then on, on its first day, before anybody has read its workflows. Each run mints a token that lives an hour and does not exist
 between runs, and nothing about it survives anybody leaving.
 
 The dispatch is the fast path and not the only one. Without it every release
