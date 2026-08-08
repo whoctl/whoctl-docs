@@ -29,21 +29,12 @@ providers:
     bundle: https://github.com/whoctl/whoctl-provider-steam/releases/latest/download/docs-bundle.json
     repository: whoctl/whoctl-provider-steam
 
-# aws and coredns are written and are not here yet, on purpose. A line in this
-# file is two promises at once — documentation the site publishes, and a
-# repository the registry index is derived from — and neither repository has
-# been pushed or released. Adding a line that points at a release which does not
-# exist fails the build, which is the design working: an unreadable bundle is
-# never quietly skipped.
-#
-# They go in when they are released, in the same change:
-#
-#   - name: aws
-#     version: latest
-#     bundle: https://github.com/whoctl/whoctl-provider-aws/releases/latest/download/docs-bundle.json
-#     repository: whoctl/whoctl-provider-aws
-#
-#   - name: coredns
-#     version: latest
-#     bundle: https://github.com/whoctl/whoctl-provider-coredns/releases/latest/download/docs-bundle.json
-#     repository: whoctl/whoctl-provider-coredns
+  - name: aws
+    version: latest
+    bundle: https://github.com/whoctl/whoctl-provider-aws/releases/latest/download/docs-bundle.json
+    repository: whoctl/whoctl-provider-aws
+
+  - name: coredns
+    version: latest
+    bundle: https://github.com/whoctl/whoctl-provider-coredns/releases/latest/download/docs-bundle.json
+    repository: whoctl/whoctl-provider-coredns
